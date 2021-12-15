@@ -73,6 +73,7 @@ RabbitMQPlugin.prototype.coolMethod = function() {
 
 // 向Webview发送接收到的数据
 RabbitMQPlugin.prototype.receivedMessageInAndroidCallback = function(data) {
+  console.log('=============== received rmq message:', data);
   if (device.platform === "Android") {
     data = JSON.stringify(data);
     var event = JSON.parse(data);
