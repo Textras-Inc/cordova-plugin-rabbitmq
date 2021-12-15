@@ -25,12 +25,8 @@ import java.util.HashMap;
  *
  **/
 public class RabbitMQClientService extends Service {
-    public String queue = "[queuename]";
-    public String exchange = "exchange.mwxing.direct";
-    public String announceexchange = "exchange.mwxing.fanout";
-    public String routingkey = "mwxing.announce";
-    public String routingkeyAccount = "mwxing.[unionid]";
-    public String routingkeyDevice = "mwxing.[unionid].[deviceId]";
+    public String queue = "";
+    public String routingkey = "";
 
     public String host = "localhost";
     public Integer port = 5672;
@@ -38,7 +34,7 @@ public class RabbitMQClientService extends Service {
     public String passwd = "guest";
 
     public RabbitMQClientService() {
-        Log.i("RabbitMQPlugin", "RabbitMQ");
+        Log.i("RabbitMQPlugin", "RabbitMQ, setting thread policy");
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
     }
@@ -46,6 +42,7 @@ public class RabbitMQClientService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.i("RabbitMQPlugin", "created service");
         JCoreInterface.asyncExecute(new MQ());
     }
 
@@ -58,6 +55,7 @@ public class RabbitMQClientService extends Service {
 
     @Override
     public void onDestroy(){
+        Log.i("RabbitMQPlugin", "destroyed service");
         stopForeground(true);
         Intent intent = new Intent("com.xiaoji.rabbitmq.SERVICE_DESTROY");
         sendBroadcast(intent);
@@ -69,23 +67,13 @@ public class RabbitMQClientService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
       String queueName = intent.getStringExtra("queueName");
-      String deviceId = intent.getStringExtra("deviceid");
-      String uId = intent.getStringExtra("uid");
 
       String host = intent.getStringExtra("host");
       String port = intent.getStringExtra("port");
       String user = intent.getStringExtra("user");
       String passwd = intent.getStringExtra("passwd");
 
-      // 本地获取的设备ID没有加密, 从队列名中获取
-      if (queueName != null && queueName.contains(".")) {
-        String[] t = queueName.split("\\.");
-        deviceId = t[1];
-      }
-
       RabbitMQClientService.this.queue = queueName;
-      RabbitMQClientService.this.routingkeyAccount = "mwxing." + uId;
-      RabbitMQClientService.this.routingkeyDevice = "mwxing." + uId + "." + deviceId;
 
       RabbitMQClientService.this.host = host;
       RabbitMQClientService.this.port = Integer.valueOf(port);
@@ -121,8 +109,13 @@ public class RabbitMQClientService extends Service {
         private void connect() {
           if (this.conn != null) {
               if (this.conn.isOpen()) {
+                Log.i("RabbitMQPlugin", "connection is already open, exiting");
                   return;
+              } else {
+                Log.i("RabbitMQPlugin", "connection is not open, continuing");
               }
+          } else {
+            Log.i("RabbitMQPlugin", "inside connect, no connection");
           }
 
           ConnectionFactory factory = new ConnectionFactory();
@@ -145,14 +138,15 @@ public class RabbitMQClientService extends Service {
               Map<String, Object> args = new HashMap<String, Object>();
               args.put("x-message-ttl", 1000 * 60 * 60 * 24);	// 存放24小时
 
-              this.channel.exchangeDeclare(exchange, "direct", true, false, null);
-              this.channel.exchangeDeclare(announceexchange, "fanout", true, false, null);
-              this.channel.queueDeclare(queue, true, false, false, null);
-              this.channel.queueBind(queue, announceexchange, routingkey);
-              this.channel.queueBind(queue, exchange, routingkeyAccount);
-              this.channel.queueBind(queue, exchange, routingkeyDevice);
+            // NOTE: we shouldn't need to declare these here
+            //   this.channel.exchangeDeclare(exchange, "direct", true, false, null);
+            //   this.channel.exchangeDeclare(announceexchange, "fanout", true, false, null);
+            //   this.channel.queueDeclare(queue, true, false, false, null);
+            //   this.channel.queueBind(queue, announceexchange, routingkey);
+            //   this.channel.queueBind(queue, exchange, routingkeyAccount);
+            //   this.channel.queueBind(queue, exchange, routingkeyDevice);
 
-              this.channel.basicConsume(queue, false, routingkeyDevice, new DefaultConsumer(channel) {
+              this.channel.basicConsume(queue, false, new DefaultConsumer(channel) {
 
                   @Override
                   public void handleDelivery(String consumerTag,
@@ -168,10 +162,10 @@ public class RabbitMQClientService extends Service {
                           Intent sendIntent = new Intent("com.xiaoji.cordova.plugin.rabbitmq.MESSAGE_RECEIVED");
                           // Android 8 later
                           //sendIntent.setComponent(new ComponentName("com.xiaoji.cordova.plugin.rabbitmq", "com.xiaoji.cordova.plugin.rabbitmq.RabbitMQReceiver"));
-                          sendIntent.putExtra("mwxing", new String(body, "utf-8"));
+                          sendIntent.putExtra("body", new String(body, "utf-8"));
                           //sendIntent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
                           RabbitMQClientService.this.sendBroadcast(sendIntent);
-                          Log.i("RabbitMQPlugin", "Broadcast Sent.");
+                          Log.i("RabbitMQPlugin", "Broadcast Sent for consumed message.");
 
                           channel.basicAck(deliveryTag, false);
                           Log.i("RabbitMQPlugin", "Ack committed.");

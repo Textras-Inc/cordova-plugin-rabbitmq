@@ -14,7 +14,7 @@ public class RabbitMQReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.i("RabbitMQPlugin", "received message from RabbitMQ Service.");
         try {
-          String extra = intent.getStringExtra("mwxing");
+          String extra = intent.getStringExtra("body");
           JSONObject message = new JSONObject();
           message.put("body", extra);
           RabbitMQPlugin.transmitMessageReceived(message);
