@@ -34,14 +34,32 @@ RabbitMQPlugin.prototype.callNative = function(
   }
 };
 
-RabbitMQPlugin.prototype.init = function(uid, deviceid, queueName, host, port, user, passwd) {
-  if (this.isPlatformIOS()) {
-    console.log("RabbitMQPlugin.prototype.initial");
-    this.callNative("initial", [uid, deviceid, queueName, host, port, user, passwd], null);
-  } else {
-    console.log("RabbitMQPlugin.prototype.init");
-    this.callNative("init", [uid, deviceid, queueName, host, port, user, passwd], null);
-  }
+RabbitMQPlugin.prototype.init = function (
+    queueName,
+    host,
+    port,
+    user,
+    passwd,
+    successCallback,
+    errorCallback
+) {
+    if (this.isPlatformIOS()) {
+        console.log('RabbitMQPlugin.prototype.initial');
+        this.callNative(
+            'initial',
+            [queueName, host, port, user, passwd],
+            successCallback,
+            errorCallback
+        );
+    } else {
+        console.log('RabbitMQPlugin.prototype.init');
+        this.callNative(
+            'init',
+            [queueName, host, port, user, passwd],
+            successCallback,
+            errorCallback
+        );
+    }
 };
 
 // Common methods

@@ -92,10 +92,12 @@ public class RabbitMQPlugin extends CordovaPlugin {
    */
   @Override
   public boolean execute(String action, final JSONArray args, CallbackContext callbackContext) throws JSONException {
-    Log.i("RabbitMQPlugin", "RabbitMQPlugin action " + action);
+    Log.i("RabbitMQPlugin", "RabbitMQPlugin action: " + action);
     if (action.equals("init")) {
       if (mContext == null) {
         Log.i("RabbitMQPlugin", "RabbitMQPlugin mContext is null");
+      } else {
+        Log.i("RabbitMQPlugin", "RabbitMQPlugin mContext is not null");
       }
       cordova.getThreadPool().execute(new Runnable() {
           @Override
@@ -124,10 +126,11 @@ public class RabbitMQPlugin extends CordovaPlugin {
   }
 
   static void transmitMessageReceived(JSONObject message) {
-    Log.i("RabbitMQPlugin", "received message transmit to mwxing.");
+    Log.i("RabbitMQPlugin", "received message: " + message.toString());
 
     if (instance == null) {
-        return;
+      Log.i("RabbitMQPlugin", "instance is null, not sending message to webview");
+      return;
     }
 
     String format = "window.plugins.RabbitMQPlugin.receivedMessageInAndroidCallback(%s);";

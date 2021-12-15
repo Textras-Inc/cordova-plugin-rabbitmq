@@ -18,22 +18,22 @@ public class RabbitMQInterface {
         Intent intent = new Intent(ctx, RabbitMQClientService.class);
 
         // 设置初始化参数
-        if (args.length() == 7) {
+        if (args.length() == 5) {
           try {
-            intent.putExtra("uid", args.getString(0));
-            intent.putExtra("deviceid", args.getString(1));
-            intent.putExtra("queueName", args.getString(2));
-            intent.putExtra("host", args.getString(3));
-            intent.putExtra("port", args.getString(4));
-            intent.putExtra("user", args.getString(5));
-            intent.putExtra("passwd", args.getString(6));
+            intent.putExtra("queueName", args.getString(0));
+            intent.putExtra("host", args.getString(1));
+            intent.putExtra("port", args.getString(2));
+            intent.putExtra("user", args.getString(3));
+            intent.putExtra("passwd", args.getString(4));
           } catch (JSONException e) {
             Log.e("RabbitMQPlugin", "Arguments json Exception.", e.getCause());
           }
           //ctx.startService(intent);
+          Log.i("RabbitMQPlugin", "starting rmq service connection.");
           ctx.bindService(intent, new ServiceConnection() {
               @Override
               public void onServiceConnected(ComponentName name, IBinder service) {
+                  Log.i("RabbitMQPlugin", "rmq service connected.");
                   RabbitMQClientService.MyBinder binder =
                           (RabbitMQClientService.MyBinder) service;
                   plugin.service = binder.getService();
@@ -41,6 +41,7 @@ public class RabbitMQInterface {
 
               @Override
               public void onServiceDisconnected(ComponentName name) {
+                  Log.i("RabbitMQPlugin", "rmq service disconnected.");
                   // fireEvent(BackgroundMode.Event.FAILURE, "'service disconnected'");
               }
           }, Context.BIND_AUTO_CREATE);
